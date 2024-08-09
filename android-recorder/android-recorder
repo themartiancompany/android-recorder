@@ -19,13 +19,18 @@ _requirements() {
   _check_cmd \
     'android-screenrecorder'
   _check_cmd \
+    'audiorecord' \
     'record-tools'
+  _check_cmd \
+    'mkmedia' \
+    'media-tools'
 }
 
 # shellcheck disable=SC2034
 _global_variables() {
   recording_date=""
   recording_method=""
+  recording_length=""
   out_file=""
   bit_rate=""
   color=""
@@ -37,6 +42,16 @@ _method_auto_detect() {
     echo \
       'android'
   fi
+}
+
+_android_audiorecord(){
+  _audiorecord+=(
+    audiorecord
+  )
+  _audiorecord_opts+=(
+    -l
+      "${_length}" 
+  )
 }
 
 _android_screenrecord(){
@@ -58,42 +73,76 @@ _android_screenrecord(){
 # $3: output video file
 _android_recorder() {
   local \
-    _format="${1}" \
-    _method="${2}" \
-    _rate="${3}" \
-    _length="${4}" \
+    _method="${1}" \
+    _rate="${2}" \
+    _length="${3}" \
     _out=(
-      "${5}"
+      "${4}"
     ) \
+    _audiorecord=() \
+    _audiorecord_opts=() \
     _screenrecord_opts=() \
     _screenrecord=() \
+    _mkmedia_opts=() \
+    _pids=() \
+    _tmp_dir \
+    _vid \
+    _aud
+  if [[ "${quiet}" != "y" ]]; then
+    _audiorecord_opts+=(
+      -v
+    )
+    _mkmedia_opts+=(
+      -v
+    )
+    _screenrecord_opts+=(
+      -v
+    )
+  fi
+  _tmp_dir="$( \
+    mktemp \
+      -d)"
+  _vid="${_tmp_dir}/vid.mp4"
+  _aud="${_tmp_dir}/aud.opus"
   "_${_method}_screenrecord"
-  # _run \
-  #   "record" \
-  #   "${_length}" \
-  #   "sync" \
-  #   "${_screenrecord[@]}" \
-  #     "${_screenrecord_opts[@]}" \
-  #     "${_out[*]}" || \
-  #   true
-  # sudo \
-  #   chown \
-  #     -R \
-  #     "${_uid}:${_uid}" \
-  #     "${_out[*]}"
-  # sudo \
-  #   chmod \
-  #     640 \
-  #     "${_out[*]}"
+  _run \
+    "audiorecord" \
+    "0" \
+    "async" \
+    "${_audiorecord[*]}" \
+      "${_audiorecord_opts[@]}" \
+      "${_aud}" || \
+    true
+  _run \
+    "record" \
+    0 \ # "${_length}" \
+    "sync" \
+    "${_screenrecord[@]}" \
+      "${_screenrecord_opts[@]}" \
+      "${_vid}" || \
+    true
+  _pids=(
+    "$( \
+        _get_pid \
+          "audiorecord")" \
+      "$( \
+        _get_pid \
+          "record")"
+  )
+  wait \
+    "${_pids[@]}"
+  _msg_info \
+    "recording ended, mixing audio and video"
+  mkmedia \
+    "${_mkmedia_opts[@]}" \
+    "${_out[*]}" \
+    "${_aud}" \
+    "${_vid}"
 }
 
 # Set defaults and, if present, overrides
 # from program command line option parameters
 _set_overrides() {
-  _set_override \
-    "recording" \
-    "format" \
-    "mp4"
   _set_override \
     "recording" \
     "date" \
@@ -127,7 +176,6 @@ _set_overrides() {
 _show_config() {
   _msg_info "${app_name} configuration"
   _msg_info "           Recording date:   $(_get "recording" "date")"
-  _msg_info "         Recording format:   $(_get "recording" "format")"
   _msg_info "         Recording method:   $(_get "recording" "method")"
   _msg_info "                 Bit rate:   $(_get "bit" "rate")"
   _msg_info "         Recording length:   $(_get "recording" "length")"
@@ -153,8 +201,6 @@ Usage:
     [options]
     (<out_file>)
   options:
-     -f                   Recording format
-                          Default: $(_get "recording" "format")
      -m                   Recording method
                           Default: $(_get "recording" "method")
      -b                   Video bitrate.
@@ -183,7 +229,6 @@ while \
     arg; do
   case \
     "${arg}" in
-    f) override_recording_format="${OPTARG}" ;;
     m) override_recording_method="${OPTARG}" ;;
     b) override_bit_rate="${OPTARG}" ;;
     l) override_recording_length="${OPTARG}" ;;
@@ -216,11 +261,10 @@ _config_user_init \
   "$(_get "app" "name")"
 _show_config
 app_opts=(
-  "${recording_format}"
   "${recording_method}"
   "${bit_rate}"
   "${recording_length}"
   "${out_file}"
 )
-_android_screenrecorder \
+_android_recorder \
   "${app_opts[@]}"
