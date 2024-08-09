@@ -1,0 +1,226 @@
+#!/usr/bin/env bash
+#
+# SPDX-License-Identifier: AGPL-3.0
+
+_bin="$( \
+  dirname \
+    "$( \
+      command \
+        -v \
+	  "env")")"
+_lib="${_bin}/../lib"
+_share="${_bin}/../share"
+source \
+  "${_lib}/libcrash-bash/crash-bash"
+
+# Check all required programs
+# are available
+_requirements() {
+  _check_cmd \
+    'android-screenrecorder'
+  _check_cmd \
+    'record-tools'
+}
+
+# shellcheck disable=SC2034
+_global_variables() {
+  recording_date=""
+  recording_method=""
+  out_file=""
+  bit_rate=""
+  color=""
+  quiet=""
+}
+
+_method_auto_detect() {
+  if [[ "$(uname -o)" == "Android" ]]; then
+    echo \
+      'android'
+  fi
+}
+
+_android_screenrecord(){
+  _screenrecord+=(
+    android-screenrecorder
+  )
+  _screenrecord_opts+=(
+    -l
+      "${_length}" 
+    -b
+      "${_rate}"
+  )
+}
+
+# Record screen
+# $1: input video file
+# $2: recording method (root)
+# $2: delay seconds
+# $3: output video file
+_android_recorder() {
+  local \
+    _format="${1}" \
+    _method="${2}" \
+    _rate="${3}" \
+    _length="${4}" \
+    _out=(
+      "${5}"
+    ) \
+    _screenrecord_opts=() \
+    _screenrecord=() \
+  "_${_method}_screenrecord"
+  # _run \
+  #   "record" \
+  #   "${_length}" \
+  #   "sync" \
+  #   "${_screenrecord[@]}" \
+  #     "${_screenrecord_opts[@]}" \
+  #     "${_out[*]}" || \
+  #   true
+  # sudo \
+  #   chown \
+  #     -R \
+  #     "${_uid}:${_uid}" \
+  #     "${_out[*]}"
+  # sudo \
+  #   chmod \
+  #     640 \
+  #     "${_out[*]}"
+}
+
+# Set defaults and, if present, overrides
+# from program command line option parameters
+_set_overrides() {
+  _set_override \
+    "recording" \
+    "format" \
+    "mp4"
+  _set_override \
+    "recording" \
+    "date" \
+    "$(_get_date_human)"
+  _set_override \
+    "recording" \
+    "method" \
+    "$(_method_auto_detect)"
+  _set_override \
+    "bit" \
+    "rate" \
+    "420000" # 420 Kb?
+    # "16000000" # 16 Mb?
+  _set_override \
+    "recording" \
+    "length" \
+    "120" # "$(( 24 * 60 * 60 ))" # 24 hours
+  if [[ -v override_color ]]; then
+    color="${override_color}"
+  elif [[ -z "${color}" ]]; then
+    color="n"
+  fi
+  if [[ -v override_quiet ]]; then
+    quiet="${override_quiet}"
+  elif [[ -z "${quiet}" ]]; then
+    quiet="y"
+  fi
+}
+
+# Shows configuration options.
+_show_config() {
+  _msg_info "${app_name} configuration"
+  _msg_info "           Recording date:   $(_get "recording" "date")"
+  _msg_info "         Recording format:   $(_get "recording" "format")"
+  _msg_info "         Recording method:   $(_get "recording" "method")"
+  _msg_info "                 Bit rate:   $(_get "bit" "rate")"
+  _msg_info "         Recording length:   $(_get "recording" "length")"
+  _msg_info "              Output file:   $(_get "out" "file")"
+}
+
+# Show help usage, with an exit status.
+# $1: exit status number.
+_usage() {
+  local \
+    _usage_text
+  IFS='' \
+    read \
+      -r \
+      -d '' \
+      _usage_text << \
+        ENDUSAGETEXT || true
+
+Record
+
+Usage:
+  $(_get "app" "name")
+    [options]
+    (<out_file>)
+  options:
+     -f                   Recording format
+                          Default: $(_get "recording" "format")
+     -m                   Recording method
+                          Default: $(_get "recording" "method")
+     -b                   Video bitrate.
+                          Default: $(_get "bit" "rate").
+     -l                   Length of the recording.
+                          Default: $(_get "recording" "length").
+     -s                   Output to stdout.
+     -h                   This message.
+     -v                   Enable verbose output
+ENDUSAGETEXT
+  _printf \
+    '%s\n' \
+    "${_usage_text}"
+  exit \
+    "${1}"
+}
+
+_globals
+_global_variables
+_requirements
+# shellcheck disable=SC2004
+# shellcheck disable=SC2034
+while \
+  getopts \
+    'f:m:b:l:cvh?' \
+    arg; do
+  case \
+    "${arg}" in
+    f) override_recording_format="${OPTARG}" ;;
+    m) override_recording_method="${OPTARG}" ;;
+    b) override_bit_rate="${OPTARG}" ;;
+    l) override_recording_length="${OPTARG}" ;;
+    c) override_color="y" ;;
+    v) override_quiet="n" ;;
+    h|?) _set_overrides && \
+	 _usage \
+           0 ;;
+    *)
+    _msg_error \
+      "Invalid argument '${arg}'" \
+      0 && \
+    _set_overrides && \
+    _usage \
+      1
+    ;;
+  esac
+done
+shift \
+  $(( \
+    OPTIND - 1 \
+  ))
+(( $# < 1 )) && \
+  _set_overrides && \
+  _usage \
+    1
+out_file="${1}"
+_set_overrides
+_config_user_init \
+  "$(_get "app" "name")"
+_show_config
+app_opts=(
+  "${recording_format}"
+  "${recording_method}"
+  "${bit_rate}"
+  "${recording_length}"
+  "${out_file}"
+)
+_android_screenrecorder \
+  "${app_opts[@]}"
