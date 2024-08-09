@@ -17,10 +17,11 @@ source \
 # are available
 _requirements() {
   _check_cmd \
+    'android-screenrecorder' \
     'android-screenrecorder'
   _check_cmd \
-    'audiorecord' \
-    'record-tools'
+    'android-audiorecorder' \
+    'android-audiorecorder'
   _check_cmd \
     'mkmedia' \
     'media-tools'
@@ -46,7 +47,7 @@ _method_auto_detect() {
 
 _android_audiorecord(){
   _audiorecord+=(
-    audiorecord
+    android-audiorecorder
   )
   _audiorecord_opts+=(
     -l
@@ -103,34 +104,28 @@ _android_recorder() {
     mktemp \
       -d)"
   _vid="${_tmp_dir}/vid.mp4"
-  _aud="${_tmp_dir}/aud.opus"
+  _aud="${_tmp_dir}/aud.aac"
+  "_${_method}_audiorecord"
   "_${_method}_screenrecord"
   _run \
-    "audiorecord" \
+    "record" \
     "0" \
     "async" \
-    "${_audiorecord[*]}" \
-      "${_audiorecord_opts[@]}" \
-      "${_aud}" || \
-    true
-  _run \
-    "record" \
-    0 \ # "${_length}" \
-    "sync" \
     "${_screenrecord[@]}" \
       "${_screenrecord_opts[@]}" \
       "${_vid}" || \
     true
+  "${_audiorecord[*]}" \
+      "${_audiorecord_opts[@]}" \
+      "${_aud}" || \
+    true
   _pids=(
-    "$( \
-        _get_pid \
-          "audiorecord")" \
-      "$( \
-        _get_pid \
-          "record")"
+    "$(_get_pid \
+         "record")"
   )
   wait \
-    "${_pids[@]}"
+    "${_pids[@]}" || \
+    true
   _msg_info \
     "recording ended, mixing audio and video"
   mkmedia \
