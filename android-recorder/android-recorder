@@ -78,6 +78,7 @@ _android_recorder() {
     _rate="${2}" \
     _length="${3}" \
     _out="${4}" \
+    _out_dir \
     _audiorecord=() \
     _audiorecord_opts=() \
     _screenrecord_opts=() \
@@ -98,11 +99,14 @@ _android_recorder() {
       -v
     )
   fi
+  _out_dir="$( \
+    dirname \
+      "${_out}")"
   _tmp_dir="$( \
     mktemp \
       -d)"
-  _vid="${_tmp_dir}/vid.mp4"
-  _aud="${_tmp_dir}/aud.aac"
+  _vid="${_out_dir}/vid.mp4"
+  _aud="${_out_dir}/aud.aac"
   "_${_method}_audiorecord"
   "_${_method}_screenrecord"
   _run \
