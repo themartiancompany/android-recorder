@@ -108,20 +108,20 @@ _android_recorder() {
   "_${_method}_audiorecord"
   "_${_method}_screenrecord"
   _run \
-    "record" \
+    "audiorecord" \
     "0" \
     "async" \
-    "${_screenrecord[@]}" \
-      "${_screenrecord_opts[@]}" \
-      "${_vid}" || \
+    "${_audiorecord[*]}" \
+        "${_audiorecord_opts[@]}" \
+        "${_aud}" || \
     true
-  "${_audiorecord[*]}" \
-      "${_audiorecord_opts[@]}" \
-      "${_aud}" || \
+  "${_screenrecord[@]}" \
+    "${_screenrecord_opts[@]}" \
+    "${_vid}" || \
     true
   _pids=(
     "$(_get_pid \
-         "record")"
+         "audiorecord")"
   )
   wait \
     "${_pids[@]}" || \
