@@ -77,7 +77,7 @@ _android_recorder() {
     _method="${1}" \
     _rate="${2}" \
     _length="${3}" \
-    _out="${4}"
+    _out="${4}" \
     _audiorecord=() \
     _audiorecord_opts=() \
     _screenrecord_opts=() \
