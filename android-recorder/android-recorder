@@ -137,6 +137,11 @@ _android_recorder() {
     "${_out}" \
     "${_aud}" \
     "${_vid}"
+  rm \
+    "${_aud}" \
+    "${_vid}" || \
+    _msg_warning \
+      "error deleting intermediate source files"
 }
 
 # Set defaults and, if present, overrides
