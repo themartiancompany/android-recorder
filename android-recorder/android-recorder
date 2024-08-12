@@ -77,9 +77,7 @@ _android_recorder() {
     _method="${1}" \
     _rate="${2}" \
     _length="${3}" \
-    _out=(
-      "${4}"
-    ) \
+    _out="${4}"
     _audiorecord=() \
     _audiorecord_opts=() \
     _screenrecord_opts=() \
@@ -128,9 +126,11 @@ _android_recorder() {
     true
   _msg_info \
     "recording ended, mixing audio and video"
+  _msg_info \
+    "mkmedia opts: ${_mkmedia_opts[*]}"
   mkmedia \
     "${_mkmedia_opts[@]}" \
-    "${_out[*]}" \
+    "${_out}" \
     "${_aud}" \
     "${_vid}"
 }
