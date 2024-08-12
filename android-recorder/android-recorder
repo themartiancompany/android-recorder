@@ -105,8 +105,8 @@ _android_recorder() {
   _tmp_dir="$( \
     mktemp \
       -d)"
-  _vid="${_out_dir}/${_out}-vid.mp4"
-  _aud="${_out_dir}/${_out}-aud.aac"
+  _vid="${_out}-vid.mp4"
+  _aud="${_out}-aud.aac"
   "_${_method}_audiorecord"
   "_${_method}_screenrecord"
   _run \
