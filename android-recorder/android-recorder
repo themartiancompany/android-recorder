@@ -52,6 +52,7 @@ _android_audiorecord(){
   _audiorecord_opts+=(
     -l
       "${_length}" 
+    -b 192000 # 192kbps
   )
 }
 
@@ -158,7 +159,7 @@ _set_overrides() {
   _set_override \
     "bit" \
     "rate" \
-    "420000" # 420 Kb?
+    "160000" # 420 Kb?
     # "16000000" # 16 Mb?
   _set_override \
     "recording" \
