@@ -62,7 +62,7 @@ _android_screenrecord(){
     android-screen-recorder
   )
   _screenrecord_opts+=(
-    -l
+    -L
       "${_length}" 
     -b
       "${_rate}"
