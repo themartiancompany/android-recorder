@@ -17,11 +17,11 @@ source \
 # are available
 _requirements() {
   _check_cmd \
-    'android-screenrecorder' \
-    'android-screenrecorder'
+    'android-screen-recorder' \
+    'android-screen-recorder'
   _check_cmd \
-    'android-audiorecorder' \
-    'android-audiorecorder'
+    'android-audio-recorder' \
+    'android-audio-recorder'
   _check_cmd \
     'mkmedia' \
     'media-tools'
@@ -32,6 +32,7 @@ _global_variables() {
   recording_date=""
   recording_method=""
   recording_length=""
+  recording_buffer=""
   out_file=""
   bit_rate=""
   color=""
@@ -47,7 +48,7 @@ _method_auto_detect() {
 
 _android_audiorecord(){
   _audiorecord+=(
-    android-audiorecorder
+    android-audio-recorder
   )
   _audiorecord_opts+=(
     -l
@@ -58,13 +59,15 @@ _android_audiorecord(){
 
 _android_screenrecord(){
   _screenrecord+=(
-    android-screenrecorder
+    android-screen-recorder
   )
   _screenrecord_opts+=(
     -l
       "${_length}" 
     -b
       "${_rate}"
+    -k
+      "${_buffer}"
   )
 }
 
@@ -78,7 +81,8 @@ _android_recorder() {
     _method="${1}" \
     _rate="${2}" \
     _length="${3}" \
-    _out="${4}" \
+    _buffer="${4}" \
+    _out="${5}" \
     _out_dir \
     _audiorecord=() \
     _audiorecord_opts=() \
@@ -165,6 +169,10 @@ _set_overrides() {
     "recording" \
     "length" \
     "120" # "$(( 24 * 60 * 60 ))" # 24 hours
+  _set_override \
+    "recording" \
+    "buffer" \
+    "${recording_length}"
   if [[ -v override_color ]]; then
     color="${override_color}"
   elif [[ -z "${color}" ]]; then
@@ -184,6 +192,7 @@ _show_config() {
   _msg_info "         Recording method:   $(_get "recording" "method")"
   _msg_info "                 Bit rate:   $(_get "bit" "rate")"
   _msg_info "         Recording length:   $(_get "recording" "length")"
+  _msg_info "         Recording buffer:   $(_get "recording" "buffer")"
   _msg_info "              Output file:   $(_get "out" "file")"
 }
 
@@ -212,6 +221,8 @@ Usage:
                           Default: $(_get "bit" "rate").
      -l                   Length of the recording.
                           Default: $(_get "recording" "length").
+     -k                   Recording buffer.
+                          Default: $(_get "recording" "buffer").
      -s                   Output to stdout.
      -h                   This message.
      -v                   Enable verbose output
@@ -230,13 +241,14 @@ _requirements
 # shellcheck disable=SC2034
 while \
   getopts \
-    'f:m:b:l:cvh?' \
+    'f:m:b:L:k:cvh?' \
     arg; do
   case \
     "${arg}" in
     m) override_recording_method="${OPTARG}" ;;
     b) override_bit_rate="${OPTARG}" ;;
-    l) override_recording_length="${OPTARG}" ;;
+    L) override_recording_length="${OPTARG}" ;;
+    k) override_recording_buffer="${OPTARG}" ;;
     c) override_color="y" ;;
     v) override_quiet="n" ;;
     h|?) _set_overrides && \
@@ -269,6 +281,7 @@ app_opts=(
   "${recording_method}"
   "${bit_rate}"
   "${recording_length}"
+  "${recording_buffer}"
   "${out_file}"
 )
 _android_recorder \
