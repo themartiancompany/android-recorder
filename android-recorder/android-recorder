@@ -219,7 +219,7 @@ Usage:
                           Default: $(_get "recording" "method")
      -b                   Video bitrate.
                           Default: $(_get "bit" "rate").
-     -l                   Length of the recording.
+     -L                   Length of the recording.
                           Default: $(_get "recording" "length").
      -k                   Recording buffer.
                           Default: $(_get "recording" "buffer").
